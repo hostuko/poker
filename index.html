@@ -479,7 +479,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
   <div class="logo">
     <div class="logo-row">
       <span class="logo-suit">♠</span>
-      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v2.5</div></div>
+      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v3.5</div></div>
     </div>
   </div>
   <nav class="nav">
@@ -643,16 +643,21 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
     </div>
     <span style="font-size:11px;color:var(--text3);margin-left:8px">Clique sur un joueur pour entrer ses cartes ou son profil</span>
   </div>
+  <!-- Clear all cards (keeps player count + profiles) -->
+  <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text3);flex:1">Effacer toutes les cartes (garde les profils et options)</span>
+    <button class="btn btn-danger" style="padding:5px 14px;font-size:12px" onclick="clearAllCards()">✕ Effacer toutes les cartes</button>
+  </div>
 
   <div class="solver-layout">
     <!-- LEFT: table + picker + context + glossary -->
     <div>
       <!-- Felt table with players — board always shows 5 slots -->
-      <div class="felt-table">
+      <div class="felt-table" onclick="switchToBoard()">
         <div class="table-logo">♠ ♥ ♦ ♣</div>
         <!-- Board — always 5 unified slots, no street tabs needed -->
         <div class="board-area" id="board-area">
-          <div class="board-lbl" id="board-area-lbl">Board <span style="font-size:9px;opacity:.6">(double-clic pour retirer)</span></div>
+          <div class="board-lbl" id="board-area-lbl">Board <span style="font-size:9px;opacity:.6">(clic = ajouter · double-clic = retirer)</span></div>
           <div class="board-unified" id="board-cards-row"></div>
         </div>
         <!-- Players ring -->
@@ -1084,12 +1089,11 @@ const PROF_COLORS={unknown:'var(--text3)',tight:'var(--blue)',fish:'var(--red)',
 let sv={
   street:'preflop',
   playerCount:3,
-  // players[0] = me, players[1..N-1] = opponents
-  players:[], // {cards:[],mode:'known'|'unknown',profile:'unknown',stack:100,name:'',pos:''}
+  players:[],
   community:[],
   activeSuit:'♥',
-  pickTarget:'hole',   // 'hole'|'community'|'player_N'
-  selectedPlayer:null, // index
+  pickTarget:'community', // default to board so first click adds to board
+  selectedPlayer:null,
   lastResult:null
 };
 
@@ -1104,6 +1108,7 @@ function initPlayers(n){
 
 function initSolver(){
   if(sv.players.length===0) initPlayers(sv.playerCount);
+  sv.pickTarget='community';
   buildPicker();
   renderTable();
   renderBoardCards();
@@ -1116,6 +1121,7 @@ function setPlayerCount(n,el){
   initPlayers(n);
   sv.community=[];
   sv.selectedPlayer=null;
+  sv.pickTarget='community';
   closePlayerPanel();
   buildPicker();
   renderTable();
@@ -1145,7 +1151,7 @@ function renderTable(){
       p.mode==='unknown'&&!isMe?`<div class="player-mini-cards"><div class="pmc unknown">?</div><div class="pmc unknown">?</div></div>`:'';
     const profBadge=!isMe&&p.profile!=='unknown'?`<div style="font-size:8px;color:${profColor};line-height:1">${PROF_LABELS[p.profile]||''}</div>`:'';
     const emoji=isMe?'😊':(p.mode==='unknown'?'❓':'👤');
-    return`<div class="player-seat" style="left:${pos.x}%;top:${pos.y}%;transform:translate(-50%,-50%)" onclick="selectPlayer(${i})">
+    return`<div class="player-seat" style="left:${pos.x}%;top:${pos.y}%;transform:translate(-50%,-50%)" onclick="event.stopPropagation();selectPlayer(${i})">
       <div class="player-avatar ${isMe?'me':'opp'}${selected?' selected':''}${hasCards&&!isMe?' has-cards':''}${p.mode==='unknown'&&!isMe?' unknown-mode':''}" style="${borderStyle}${glowStyle}">
         <span>${emoji}</span>
       </div>
@@ -1163,7 +1169,6 @@ function selectPlayer(idx){
   const pp=document.getElementById('player-panel');
   pp.classList.add('open');
   set('pp-title',isMe?'Mes cartes':`Joueur ${idx+1}${p.name?' — '+p.name:''}`);
-  // Mode buttons (hide for me)
   document.getElementById('pp-known').style.display=isMe?'none':'';
   document.getElementById('pp-unknown').style.display=isMe?'none':'';
   document.getElementById('pp-known').className='pp-mode-btn '+(p.mode==='known'?'active-known':'');
@@ -1181,8 +1186,10 @@ function selectPlayer(idx){
 
 function closePlayerPanel(){
   sv.selectedPlayer=null;
+  sv.pickTarget='community';
   document.getElementById('player-panel').classList.remove('open');
   renderTable();
+  buildPicker();
 }
 
 function renderPPCards(idx){
@@ -1240,8 +1247,11 @@ function buildPicker(){
   sr.innerHTML=SUITS_DEF.map(s=>`<button class="suit-chip ${s.cls} ${sv.activeSuit===s.sym?'active':''}" onclick="pickSuit('${s.sym}',this)">${s.sym}</button>`).join('');
   renderRankGrid();
   const lbl=document.getElementById('picker-lbl');
-  if(sv.pickTarget==='community') lbl.innerHTML='▶ Sélectionne les cartes du board';
-  else if(sv.pickTarget.startsWith('player_')){
+  if(sv.pickTarget==='community'){
+    const slotNames=['Flop 1','Flop 2','Flop 3','Turn','River'];
+    const next=sv.community.length<5?slotNames[sv.community.length]:'Board complet';
+    lbl.innerHTML=`▶ Board — ${next}`;
+  } else if(sv.pickTarget.startsWith('player_')){
     const idx=parseInt(sv.pickTarget.split('_')[1]);
     lbl.innerHTML=`▶ Cartes de ${idx===0?'toi':('Joueur '+(idx+1))}`;
   }
@@ -1274,10 +1284,9 @@ function pickCard(rank,suit){
   const sd=SUITS_DEF.find(s=>s.sym===suit);
   const card={rank,suit,cardCls:sd.cardCls,suitCls:sd.suitCls};
   if(sv.pickTarget==='community'){
-    const maxC=sv.street==='flop'?3:sv.street==='turn'?4:5;
-    if(sv.community.length>=maxC){toast('Board complet');return}
+    if(sv.community.length>=5){toast('Board complet — 5 cartes max');return}
     sv.community.push(card);
-    renderBoardCards();
+    renderBoardCards(); // re-renders and auto-detects street
   } else if(sv.pickTarget.startsWith('player_')){
     const idx=parseInt(sv.pickTarget.split('_')[1]);
     const p=sv.players[idx];
@@ -1291,7 +1300,7 @@ function pickCard(rank,suit){
 }
 
 
-/* ── Board cards — always 5 slots, double-click to remove, auto street ── */
+/* ── Board cards — always 5 slots, single-click empty to add, double-click filled to remove ── */
 function renderBoardCards(){
   const row=document.getElementById('board-cards-row');
   const lbl=document.getElementById('board-area-lbl');
@@ -1300,74 +1309,82 @@ function renderBoardCards(){
 
   // Auto-detect street from card count
   const autoStreet = c.length===0?'preflop':c.length<=3?'flop':c.length===4?'turn':'river';
-  if(autoStreet!==sv.street){
-    sv.street=autoStreet;
-    // Sync street pill display if needed
-  }
+  sv.street=autoStreet;
 
+  const isPickingBoard=(sv.pickTarget==='community');
   let html='';
-  // Slot labels
-  const slotLabels=['F','F','F','T','R'];
-  const slotTitles=['Flop 1','Flop 2','Flop 3','Turn','River'];
 
   for(let i=0;i<5;i++){
     if(i<c.length){
-      // Filled card — double-click removes it
-      html+=renderCardHTML(c[i],`dblRemoveBoardCard(${i})`,'small','double');
+      // Filled card — double-click removes
+      html+=renderCardHTML(c[i],`event.stopPropagation();dblRemoveBoardCard(${i})`,'small','double');
     } else {
-      // Empty slot — single click to target board, then pick from picker
-      const slotActive = (i===c.length); // next slot to fill
-      html+=`<div class="pcard empty-card slot-${i}" style="width:38px;height:54px;font-size:${slotActive?'16px':'12px'};opacity:${slotActive?1:0.35};border-color:${slotActive?'rgba(74,158,255,.5)':'rgba(255,255,255,.1)'};${slotActive?'box-shadow:0 0 8px rgba(74,158,255,.25);':''}"
-        onclick="targetBoardSlot(${i})"
-        title="${slotTitles[i]} — clic pour sélectionner">
-        ${slotActive?'+':'<span style=\'font-size:9px;letter-spacing:.05em\'>'+slotLabels[i]+'</span>'}
+      // Empty slot — single click to target board picker
+      const isNext=(i===c.length);
+      const isActive=isPickingBoard&&isNext;
+      const opacity=i<=c.length?1:0.35;
+      const borderCol=isActive?'rgba(74,158,255,.7)':isNext?'rgba(255,255,255,.18)':'rgba(255,255,255,.07)';
+      const glow=isActive?'box-shadow:0 0 10px rgba(74,158,255,.35);':'';
+      const slotNames=['F1','F2','F3','T','R'];
+      html+=`<div class="pcard empty-card"
+        style="width:38px;height:54px;font-size:${isNext?'16px':'11px'};opacity:${opacity};border-color:${borderCol};${glow}cursor:pointer;"
+        onclick="event.stopPropagation();activateBoardPicker(${i})"
+        title="${slotNames[i]} — clic pour ajouter">
+        ${isNext?'+':'<span style=\'font-size:9px;color:rgba(255,255,255,.25)\'>'+slotNames[i]+'</span>'}
       </div>`;
     }
-    // Separator after slot 2 (flop/turn) and slot 3 (turn/river)
-    if(i===2||i===3) html+=`<div class="brd-sep" style="font-size:9px;color:rgba(255,255,255,.2);letter-spacing:.03em;writing-mode:vertical-rl;user-select:none">${i===2?'▶':'▶'}</div>`;
+    // Visual separators after flop/turn
+    if(i===2||i===3){
+      html+=`<div style="font-size:9px;color:rgba(255,255,255,.18);align-self:center;user-select:none;padding:0 1px">▶</div>`;
+    }
   }
   row.innerHTML=html;
-
-  // Update street label in picker
-  const targetLbl=document.getElementById('picker-lbl');
-  if(sv.pickTarget==='community'){
-    const names={flop:'Flop',turn:'Turn',river:'River',preflop:'—'};
-    const next=c.length<3?'Flop':c.length===3?'Turn':c.length===4?'River':'Board complet';
-    targetLbl.innerHTML=`▶ Board — ${next}`;
-  }
-
   updateLiveEquity();
 }
 
-function targetBoardSlot(idx){
-  // Only allow filling the next empty slot in order
-  if(idx!==sv.community.length){
-    toast('Remplis les slots dans l\'ordre',);
-    return;
-  }
+/* ── Switch picker to board mode (called on any click on the felt table) ── */
+function switchToBoard(){
+  if(sv.pickTarget==='community') return; // already in board mode
   sv.pickTarget='community';
+  sv.selectedPlayer=null;
+  document.getElementById('player-panel').classList.remove('open');
   buildPicker();
-  // Highlight the active slot
-  renderBoardCards();
+  renderTable();
 }
 
-// Double-click handler for board cards
+function activateBoardPicker(slotIdx){
+  if(slotIdx>sv.community.length){
+    toast('Remplis les slots dans l\'ordre : F1 → F2 → F3 → Turn → River');
+    return;
+  }
+  // Close player panel if open, set target to board
+  if(sv.selectedPlayer!==null) closePlayerPanel();
+  sv.pickTarget='community';
+  sv.selectedPlayer=null;
+  // Update picker label and re-render rank grid (not the whole board)
+  const lbl=document.getElementById('picker-lbl');
+  const names=['Flop 1','Flop 2','Flop 3','Turn','River'];
+  lbl.innerHTML=`▶ Board — ${names[sv.community.length]||'Board complet'}`;
+  renderRankGrid();
+  // Scroll to picker so user can see it
+  document.getElementById('picker-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// Double-click handler with timer
 let boardClickTimers={};
 function dblRemoveBoardCard(i){
   if(boardClickTimers[i]){
-    // Double click detected
     clearTimeout(boardClickTimers[i]);
     delete boardClickTimers[i];
     sv.community.splice(i,1);
     renderBoardCards();
     renderRankGrid();
-    toast('Carte retirée');
+    toast('Carte retirée du board');
   } else {
     boardClickTimers[i]=setTimeout(()=>{
       delete boardClickTimers[i];
-      // Single click — set as pick target for replacement not needed, card already there
-      toast('Double-clic pour retirer cette carte');
-    },350);
+      toast('Double-clic pour retirer cette carte du board');
+    },320);
   }
 }
 
@@ -1375,6 +1392,29 @@ function removeBoardCard(i){
   sv.community.splice(i,1);
   renderBoardCards();
   renderRankGrid();
+}
+
+/* ── Clear ALL cards (keeps player count, profiles, stacks, names) ── */
+function clearAllCards(){
+  // Efface SEULEMENT les cartes — garde mode, profil, stack, nom, position
+  sv.community=[];
+  sv.street='preflop';
+  boardClickTimers={};
+
+  for(let i=0;i<sv.players.length;i++){
+    sv.players[i].cards=[];
+    // NE PAS toucher mode, profile, stack, name, pos
+  }
+
+  sv.selectedPlayer=null;
+  sv.pickTarget='community';
+  document.getElementById('player-panel').classList.remove('open');
+
+  buildPicker();
+  renderTable();
+  renderBoardCards();
+  resetDecision();
+  toast('Cartes effacées ✓','tg');
 }
 
 /* ── Card HTML renderer ── */
@@ -1642,6 +1682,7 @@ function resetSolver(){
   sv.street='preflop';
   sv.selectedPlayer=null;
   sv.lastResult=null;
+  sv.pickTarget='community';
   boardClickTimers={};
   initPlayers(sv.playerCount);
   closePlayerPanel();
