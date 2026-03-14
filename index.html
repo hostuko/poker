@@ -254,23 +254,15 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
 .pcard .rm{position:absolute;top:-5px;right:-5px;width:14px;height:height:14px;background:var(--red);border-radius:50%;font-size:8px;color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;width:14px;height:14px}
 .pcard:hover .rm{opacity:1}
 
-/* Card picker */
-.picker-popup{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:14px;margin-bottom:14px}
-.picker-target-lbl{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px}
-.suits-row{display:flex;gap:6px;margin-bottom:10px}
-.suit-chip{padding:6px 14px;border-radius:var(--r);border:1px solid var(--border);background:transparent;cursor:pointer;font-size:18px;transition:all .15s}
-.suit-chip:hover{border-color:var(--border2);background:var(--bg3)}
-.suit-chip.s-hearts.active{border-color:var(--s-hearts);background:rgba(232,64,96,.12);color:var(--s-hearts)}
-.suit-chip.s-diamonds.active{border-color:var(--s-diamonds);background:rgba(232,64,96,.12);color:var(--s-diamonds)}
-.suit-chip.s-spades.active{border-color:rgba(200,212,232,.3);background:rgba(200,212,232,.07);color:var(--s-spades)}
-.suit-chip.s-clubs.active{border-color:rgba(200,212,232,.3);background:rgba(200,212,232,.07);color:var(--s-clubs)}
-.suit-chip.s-hearts,.suit-chip.s-diamonds{color:var(--s-hearts)}
-.suit-chip.s-spades,.suit-chip.s-clubs{color:var(--s-spades)}
-.ranks-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.rank-chip{padding:8px 4px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:700;font-family:var(--mono);text-align:center;transition:all .15s;color:var(--text)}
-.rank-chip:hover{background:var(--bg4);border-color:var(--border2)}
-.rank-chip.used{opacity:.2;pointer-events:none}
+/* Card picker — all suits */
+.picker-popup{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:12px;margin-bottom:14px}
+.picker-target-lbl{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:8px}
+.picker-suit-row{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin-bottom:3px}
+.rank-chip{padding:6px 2px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;font-weight:700;font-family:var(--mono);text-align:center;transition:all .12s;color:var(--text);line-height:1.2}
+.rank-chip:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-1px)}
+.rank-chip.used{opacity:.18;pointer-events:none}
 .rank-chip.red-r{color:var(--s-hearts)}
+.suit-row-label{font-size:14px;display:flex;align-items:center;justify-content:center;padding:4px 0;font-weight:700}
 
 /* Street tabs */
 .streets{display:flex;gap:4px;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:14px}
@@ -479,7 +471,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
   <div class="logo">
     <div class="logo-row">
       <span class="logo-suit">♠</span>
-      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v3.5</div></div>
+      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v3.6</div></div>
     </div>
   </div>
   <nav class="nav">
@@ -628,25 +620,15 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
     <button class="btn" onclick="resetSolver()">↺ Nouvelle main</button>
   </div>
 
-  <!-- Player count selector -->
-  <div class="player-count-bar">
-    <span class="pc-label">Nombre de joueurs à table</span>
-    <div class="pc-btns" id="pc-btns">
-      <button class="pc-btn" onclick="setPlayerCount(2,this)">2</button>
-      <button class="pc-btn active" onclick="setPlayerCount(3,this)">3</button>
-      <button class="pc-btn" onclick="setPlayerCount(4,this)">4</button>
-      <button class="pc-btn" onclick="setPlayerCount(5,this)">5</button>
-      <button class="pc-btn" onclick="setPlayerCount(6,this)">6</button>
-      <button class="pc-btn" onclick="setPlayerCount(7,this)">7</button>
-      <button class="pc-btn" onclick="setPlayerCount(8,this)">8</button>
-      <button class="pc-btn" onclick="setPlayerCount(9,this)">9</button>
-    </div>
-    <span style="font-size:11px;color:var(--text3);margin-left:8px">Clique sur un joueur pour entrer ses cartes ou son profil</span>
-  </div>
-  <!-- Clear all cards (keeps player count + profiles) -->
+  <!-- Player count + effacer inline -->
   <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:14px;flex-wrap:wrap">
-    <span style="font-size:11px;color:var(--text3);flex:1">Effacer toutes les cartes (garde les profils et options)</span>
-    <button class="btn btn-danger" style="padding:5px 14px;font-size:12px" onclick="clearAllCards()">✕ Effacer toutes les cartes</button>
+    <span class="pc-label">Joueurs à table</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button class="pc-btn" onclick="changePlayerCount(-1)" style="width:28px;height:28px;font-size:16px;border-radius:var(--r)">−</button>
+      <span id="pc-display" style="font-size:16px;font-weight:700;font-family:var(--mono);min-width:22px;text-align:center;color:var(--text)">3</span>
+      <button class="pc-btn" onclick="changePlayerCount(+1)" style="width:28px;height:28px;font-size:16px;border-radius:var(--r)">+</button>
+    </div>
+    <button class="btn btn-danger" style="padding:5px 14px;font-size:12px;margin-left:auto" onclick="clearAllCards()">✕ Effacer les cartes</button>
   </div>
 
   <div class="solver-layout">
@@ -689,11 +671,10 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
         <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="closePlayerPanel()">Fermer ✕</button>
       </div>
 
-      <!-- Card picker -->
+      <!-- Card picker — 4 lignes (une par couleur), 13 colonnes A→2 -->
       <div class="picker-popup" id="picker-panel">
         <div class="picker-target-lbl" id="picker-lbl">▶ Sélectionne des cartes</div>
-        <div class="suits-row" id="suits-row"></div>
-        <div class="ranks-grid" id="ranks-grid"></div>
+        <div id="picker-allsuits"></div>
       </div>
 
       <!-- Context -->
@@ -1109,24 +1090,11 @@ function initPlayers(n){
 function initSolver(){
   if(sv.players.length===0) initPlayers(sv.playerCount);
   sv.pickTarget='community';
+  const el=document.getElementById('pc-display');
+  if(el) el.textContent=sv.playerCount;
   buildPicker();
   renderTable();
   renderBoardCards();
-}
-
-function setPlayerCount(n,el){
-  sv.playerCount=n;
-  document.querySelectorAll('.pc-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  initPlayers(n);
-  sv.community=[];
-  sv.selectedPlayer=null;
-  sv.pickTarget='community';
-  closePlayerPanel();
-  buildPicker();
-  renderTable();
-  renderBoardCards();
-  resetDecision();
 }
 
 /* ── Table rendering ── */
@@ -1241,11 +1209,28 @@ function renderPickerForPlayer(idx){
   document.getElementById('picker-lbl').innerHTML=`▶ Sélectionne les cartes de ${idx===0?'toi':('Joueur '+(idx+1))}`;
 }
 
-/* ── Card picker ── */
+/* ── Player count +/- ── */
+function changePlayerCount(delta){
+  const newN=Math.min(9,Math.max(2,sv.playerCount+delta));
+  if(newN===sv.playerCount)return;
+  sv.playerCount=newN;
+  document.getElementById('pc-display').textContent=newN;
+  // Save current player data
+  const saved=sv.players.map(p=>({...p}));
+  initPlayers(newN);
+  // Restore saved data for existing players
+  for(let i=0;i<Math.min(saved.length,newN);i++){
+    sv.players[i]={...sv.players[i],...saved[i]};
+  }
+  sv.selectedPlayer=null;
+  sv.pickTarget='community';
+  document.getElementById('player-panel').classList.remove('open');
+  buildPicker();renderTable();resetDecision();
+}
+
+/* ── Card picker — all 4 suits as rows, A→2 left to right ── */
 function buildPicker(){
-  const sr=document.getElementById('suits-row');
-  sr.innerHTML=SUITS_DEF.map(s=>`<button class="suit-chip ${s.cls} ${sv.activeSuit===s.sym?'active':''}" onclick="pickSuit('${s.sym}',this)">${s.sym}</button>`).join('');
-  renderRankGrid();
+  renderAllSuitsPicker();
   const lbl=document.getElementById('picker-lbl');
   if(sv.pickTarget==='community'){
     const slotNames=['Flop 1','Flop 2','Flop 3','Turn','River'];
@@ -1257,27 +1242,37 @@ function buildPicker(){
   }
 }
 
-function pickSuit(sym,el){
-  sv.activeSuit=sym;
-  document.querySelectorAll('#suits-row .suit-chip').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  renderRankGrid();
-}
-
 function getAllUsedCards(){
   const used=[...sv.community];
   sv.players.forEach(p=>used.push(...p.cards));
   return used;
 }
 
-function renderRankGrid(){
+function renderAllSuitsPicker(){
   const used=getAllUsedCards();
-  const sd=SUITS_DEF.find(s=>s.sym===sv.activeSuit);
-  const isRed=RED_SUITS.includes(sv.activeSuit);
-  document.getElementById('ranks-grid').innerHTML=RANKS_DEF.map(r=>{
-    const u=used.some(c=>c.rank===r&&c.suit===sv.activeSuit);
-    return`<button class="rank-chip ${isRed?'red-r':''} ${u?'used':''}" onclick="pickCard('${r}','${sv.activeSuit}')">${r}</button>`;
+  const el=document.getElementById('picker-allsuits');
+  if(!el)return;
+  el.innerHTML=SUITS_DEF.map(s=>{
+    const isRed=RED_SUITS.includes(s.sym);
+    const suitColor=isRed?'var(--s-hearts)':'var(--s-spades)';
+    const chips=RANKS_DEF.map(r=>{
+      const u=used.some(c=>c.rank===r&&c.suit===s.sym);
+      return`<button class="rank-chip ${isRed?'red-r':''} ${u?'used':''}"
+        onclick="pickCard('${r}','${s.sym}')"
+        style="${u?'':'cursor:pointer'}">${r}<span style="font-size:9px">${s.sym}</span></button>`;
+    }).join('');
+    return`<div class="picker-suit-row">${chips}</div>`;
   }).join('');
+}
+
+function renderRankGrid(){
+  // Now just calls full picker re-render
+  renderAllSuitsPicker();
+}
+
+function pickSuit(sym,el){
+  // No longer needed — kept for compatibility
+  sv.activeSuit=sym;
 }
 
 function pickCard(rank,suit){
@@ -1685,6 +1680,8 @@ function resetSolver(){
   sv.pickTarget='community';
   boardClickTimers={};
   initPlayers(sv.playerCount);
+  const el=document.getElementById('pc-display');
+  if(el) el.textContent=sv.playerCount;
   closePlayerPanel();
   buildPicker();renderTable();renderBoardCards();resetDecision();
 }
