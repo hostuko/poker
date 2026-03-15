@@ -256,13 +256,20 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
 
 /* Card picker — all suits */
 .picker-popup{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:12px;margin-bottom:14px}
-.picker-target-lbl{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:8px}
-.picker-suit-row{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin-bottom:3px}
-.rank-chip{padding:6px 2px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:12px;font-weight:700;font-family:var(--mono);text-align:center;transition:all .12s;color:var(--text);line-height:1.2}
-.rank-chip:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-1px)}
-.rank-chip.used{opacity:.18;pointer-events:none}
-.rank-chip.red-r{color:var(--s-hearts)}
-.suit-row-label{font-size:14px;display:flex;align-items:center;justify-content:center;padding:4px 0;font-weight:700}
+.picker-target-lbl{font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px}
+.picker-suit-row{display:grid;grid-template-columns:repeat(13,1fr);gap:4px;margin-bottom:4px}
+.rank-chip{
+  padding:9px 2px;border-radius:5px;border:1px solid var(--border);
+  background:var(--bg3);cursor:pointer;font-size:12px;font-weight:700;
+  font-family:var(--mono);text-align:center;transition:all .12s;color:var(--text);
+  line-height:1.1;display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.rank-chip:hover{background:var(--bg4);border-color:var(--border2);transform:translateY(-2px)}
+.rank-chip.used{opacity:.15;pointer-events:none;background:var(--bg)}
+.rank-chip .rk{font-size:13px;font-weight:800}
+.rank-chip .rs{font-size:11px;line-height:1}
+.rank-chip.red-r .rk,.rank-chip.red-r .rs{color:var(--s-hearts)}
+.rank-chip.black-r .rk,.rank-chip.black-r .rs{color:var(--s-spades)}
 
 /* Street tabs */
 .streets{display:flex;gap:4px;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:14px}
@@ -471,7 +478,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
   <div class="logo">
     <div class="logo-row">
       <span class="logo-suit">♠</span>
-      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v3.6</div></div>
+      <div><div class="logo-name">WePoker HUD</div><div class="logo-ver">tracker + solver v4.1</div></div>
     </div>
   </div>
   <nav class="nav">
@@ -646,7 +653,13 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
         <div class="players-ring" id="players-ring"></div>
       </div>
 
-      <!-- Player detail panel (opens on click) -->
+      <!-- Card picker — FIXED below table, always visible -->
+      <div class="picker-popup" id="picker-panel">
+        <div class="picker-target-lbl" id="picker-lbl">▶ Sélectionne des cartes</div>
+        <div id="picker-allsuits"></div>
+      </div>
+
+      <!-- Player detail panel (opens on click, closes on click outside) -->
       <div class="player-panel" id="player-panel">
         <div class="pp-header">
           <div class="pp-title" id="pp-title">Joueur</div>
@@ -669,12 +682,6 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
           <div class="pp-g"><label>Position</label><select id="pp-pos" onchange="savePlayerProfile()"><option value="">Auto</option><option value="BTN">BTN</option><option value="CO">CO</option><option value="HJ">HJ</option><option value="MP">MP</option><option value="UTG">UTG</option><option value="SB">SB</option><option value="BB">BB</option></select></div>
         </div>
         <button class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="closePlayerPanel()">Fermer ✕</button>
-      </div>
-
-      <!-- Card picker — 4 lignes (une par couleur), 13 colonnes A→2 -->
-      <div class="picker-popup" id="picker-panel">
-        <div class="picker-target-lbl" id="picker-lbl">▶ Sélectionne des cartes</div>
-        <div id="picker-allsuits"></div>
       </div>
 
       <!-- Context -->
@@ -1044,6 +1051,7 @@ const SUITS_DEF=[
   {sym:'♣',name:'clubs',cls:'s-clubs',cardCls:'black-card',suitCls:'suit-clubs'}
 ];
 const RANKS_DEF=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+function dispRank(r){return r==='T'?'10':r;} // display helper
 const RED_SUITS=['♥','♦'];
 
 // Player positions on the oval table (percentages of ring container)
@@ -1073,8 +1081,8 @@ let sv={
   players:[],
   community:[],
   activeSuit:'♥',
-  pickTarget:'community', // default to board so first click adds to board
-  selectedPlayer:null,
+  pickTarget:'player_0', // default to my cards
+  selectedPlayer:0,
   lastResult:null
 };
 
@@ -1089,12 +1097,15 @@ function initPlayers(n){
 
 function initSolver(){
   if(sv.players.length===0) initPlayers(sv.playerCount);
-  sv.pickTarget='community';
+  sv.pickTarget='player_0';
+  sv.selectedPlayer=0;
   const el=document.getElementById('pc-display');
   if(el) el.textContent=sv.playerCount;
   buildPicker();
   renderTable();
   renderBoardCards();
+  // Auto-open my own panel so cards are immediately selectable
+  setTimeout(()=>selectPlayer(0), 50);
 }
 
 /* ── Table rendering ── */
@@ -1252,14 +1263,17 @@ function renderAllSuitsPicker(){
   const used=getAllUsedCards();
   const el=document.getElementById('picker-allsuits');
   if(!el)return;
-  el.innerHTML=SUITS_DEF.map(s=>{
-    const isRed=RED_SUITS.includes(s.sym);
-    const suitColor=isRed?'var(--s-hearts)':'var(--s-spades)';
+  // Suit order: ♥ ♠ ♦ ♣ (Cœur, Pique, Carreau, Trèfle)
+  const suitOrder=['♥','♠','♦','♣'];
+  el.innerHTML=suitOrder.map(sym=>{
+    const sd=SUITS_DEF.find(s=>s.sym===sym);
+    const isRed=RED_SUITS.includes(sym);
+    const colorClass=isRed?'red-r':'black-r';
     const chips=RANKS_DEF.map(r=>{
-      const u=used.some(c=>c.rank===r&&c.suit===s.sym);
-      return`<button class="rank-chip ${isRed?'red-r':''} ${u?'used':''}"
-        onclick="pickCard('${r}','${s.sym}')"
-        style="${u?'':'cursor:pointer'}">${r}<span style="font-size:9px">${s.sym}</span></button>`;
+      const u=used.some(c=>c.rank===r&&c.suit===sym);
+      return`<button class="rank-chip ${colorClass} ${u?'used':''}" onclick="pickCard('${r}','${sym}')">
+        <span class="rk">${dispRank(r)}</span><span class="rs">${sym}</span>
+      </button>`;
     }).join('');
     return`<div class="picker-suit-row">${chips}</div>`;
   }).join('');
@@ -1281,7 +1295,7 @@ function pickCard(rank,suit){
   if(sv.pickTarget==='community'){
     if(sv.community.length>=5){toast('Board complet — 5 cartes max');return}
     sv.community.push(card);
-    renderBoardCards(); // re-renders and auto-detects street
+    renderBoardCards();
   } else if(sv.pickTarget.startsWith('player_')){
     const idx=parseInt(sv.pickTarget.split('_')[1]);
     const p=sv.players[idx];
@@ -1290,6 +1304,14 @@ function pickCard(rank,suit){
     renderPPCards(idx);
     renderTable();
     updateLiveEquity();
+    // Après la 2ème carte du joueur 0 (moi), passer automatiquement au board
+    if(idx===0 && p.cards.length===2){
+      sv.pickTarget='community';
+      sv.selectedPlayer=null;
+      document.getElementById('player-panel').classList.remove('open');
+      buildPicker();
+      renderTable();
+    }
   }
   renderRankGrid();
 }
@@ -1391,36 +1413,32 @@ function removeBoardCard(i){
 
 /* ── Clear ALL cards (keeps player count, profiles, stacks, names) ── */
 function clearAllCards(){
-  // Efface SEULEMENT les cartes — garde mode, profil, stack, nom, position
   sv.community=[];
   sv.street='preflop';
   boardClickTimers={};
-
   for(let i=0;i<sv.players.length;i++){
     sv.players[i].cards=[];
-    // NE PAS toucher mode, profile, stack, name, pos
   }
-
   sv.selectedPlayer=null;
-  sv.pickTarget='community';
+  sv.pickTarget='player_0';
   document.getElementById('player-panel').classList.remove('open');
-
   buildPicker();
   renderTable();
   renderBoardCards();
   resetDecision();
+  setTimeout(()=>selectPlayer(0),50);
   toast('Cartes effacées ✓','tg');
 }
 
 /* ── Card HTML renderer ── */
 function renderCardHTML(c,onclickStr,size,clickMode){
   const w=size==='small'?38:42,h=size==='small'?54:58;
-  const evtAttr=clickMode==='double'
-    ? `onclick="${onclickStr}"`
-    : `onclick="${onclickStr}"`;
+  const dr=dispRank(c.rank);
+  const fs=dr==='10'?(size==='small'?9:10):(size==='small'?11:12); // smaller font for 10
+  const evtAttr=`onclick="${onclickStr}"`;
   return`<div class="pcard ${c.cardCls}" style="width:${w}px;height:${h}px" ${evtAttr} title="${clickMode==='double'?'Double-clic pour retirer':'Clic pour retirer'}">
-    <div class="c-tl"><span class="c-rank ${c.suitCls}" style="font-size:${size==='small'?11:12}px">${c.rank}</span><span class="c-suit ${c.suitCls}" style="font-size:${size==='small'?10:11}px">${c.suit}</span></div>
-    <div class="c-br"><span class="c-rank ${c.suitCls}" style="font-size:${size==='small'?11:12}px">${c.rank}</span><span class="c-suit ${c.suitCls}" style="font-size:${size==='small'?10:11}px">${c.suit}</span></div>
+    <div class="c-tl"><span class="c-rank ${c.suitCls}" style="font-size:${fs}px">${dr}</span><span class="c-suit ${c.suitCls}" style="font-size:${size==='small'?10:11}px">${c.suit}</span></div>
+    <div class="c-br"><span class="c-rank ${c.suitCls}" style="font-size:${fs}px">${dr}</span><span class="c-suit ${c.suitCls}" style="font-size:${size==='small'?10:11}px">${c.suit}</span></div>
     <div class="rm">✕</div>
   </div>`;
 }
@@ -1431,7 +1449,7 @@ function renderCardHTML(c,onclickStr,size,clickMode){
 const RANK_MAP={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,T:10,J:11,Q:12,K:13,A:14};
 const SUIT_MAP={'♠':0,'♥':1,'♦':2,'♣':3};
 function encodeCard(c){return{r:RANK_MAP[c.rank],s:SUIT_MAP[c.suit]}}
-function decodeRank(r){return['','','2','3','4','5','6','7','8','9','T','J','Q','K','A'][r]}
+function decodeRank(r){return['','','2','3','4','5','6','7','8','9','10','J','Q','K','A'][r]}
 
 function evalHand(cards){
   const n=cards.length;
@@ -1677,13 +1695,14 @@ function resetSolver(){
   sv.street='preflop';
   sv.selectedPlayer=null;
   sv.lastResult=null;
-  sv.pickTarget='community';
+  sv.pickTarget='player_0';
   boardClickTimers={};
   initPlayers(sv.playerCount);
   const el=document.getElementById('pc-display');
   if(el) el.textContent=sv.playerCount;
   closePlayerPanel();
   buildPicker();renderTable();renderBoardCards();resetDecision();
+  setTimeout(()=>selectPlayer(0),50);
 }
 
 function resetDecision(){
@@ -1910,6 +1929,19 @@ function initGate(){
 
 init();
 initGate();
+
+// Close player panel when clicking outside it
+document.addEventListener('click', function(e){
+  const panel = document.getElementById('player-panel');
+  if(!panel || !panel.classList.contains('open')) return;
+  // Never close when picking my own cards (player 0)
+  if(sv.selectedPlayer===0) return;
+  if(panel.contains(e.target)) return;
+  if(e.target.closest('.player-seat')) return;
+  if(e.target.closest('.felt-table')) return;
+  if(e.target.closest('#picker-panel')) return;
+  closePlayerPanel();
+});
 </script>
 </body>
 </html>
