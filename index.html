@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WePoker HUD — Tracker & Solver IA</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,7 +19,7 @@
   --teal:#2dd4bf;
   --s-hearts:#e84060;--s-diamonds:#e84060;--s-spades:#c8d4e8;--s-clubs:#c8d4e8;
   --felt:#0a3525;--felt2:#072a1c;--felt3:#0d4030;
-  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;--mono:'SF Mono','Fira Code','Cascadia Code',Consolas,'Courier New',monospace;
   --r:6px;--r2:10px;--r3:14px;
 }
 html{scroll-behavior:smooth}
@@ -414,62 +413,17 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .ctx-grid{grid-template-columns:1fr 1fr}
 }
-@media(max-width:420px){.form-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:420px){.felt-table{min-height:240px}.pcard{width:34px;height:48px}.players-ring{height:200px}}
+/* Touch targets min 44px */
+.nav-item{min-height:36px}.btn{min-height:36px}.pc-btn{min-height:44px;min-width:44px}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-/* ── PASSWORD GATE ── */
-#pw-gate{
-  position:fixed;inset:0;z-index:99999;
-  background:var(--bg);
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;
-}
-.pw-card{
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  border-radius:var(--r3);
-  padding:36px 32px;
-  width:320px;
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-.pw-suit{font-size:36px;margin-bottom:12px;background:linear-gradient(135deg,#4a9eff,#9b7eff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.pw-title{font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}
-.pw-sub{font-size:12px;color:var(--text3);margin-bottom:24px}
-.pw-input{
-  width:100%;background:var(--bg3);border:1px solid var(--border2);
-  border-radius:var(--r);color:var(--text);font-family:var(--mono);
-  font-size:16px;padding:11px 14px;outline:none;text-align:center;
-  letter-spacing:.15em;margin-bottom:12px;transition:border-color .2s;
-}
-.pw-input:focus{border-color:var(--blue)}
-.pw-input.error{border-color:var(--red);animation:shake .35s ease}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
-.pw-btn{
-  width:100%;padding:11px;background:var(--blue);border:none;border-radius:var(--r);
-  color:#fff;font-family:var(--font);font-size:14px;font-weight:600;
-  cursor:pointer;transition:all .15s;
-}
-.pw-btn:hover{background:#3a8ef0}.pw-btn:active{transform:scale(.98)}
-.pw-error{font-size:11.5px;color:var(--red);margin-top:10px;height:16px;transition:opacity .2s}
-.pw-hint{font-size:10px;color:var(--text3);margin-top:16px}</style>
+</style>
 </head>
 <body>
 
-<!-- PASSWORD GATE -->
-<div id="pw-gate">
-  <div class="pw-card">
-    <div class="pw-suit">♠</div>
-    <div class="pw-title">WePoker HUD</div>
-    <div class="pw-sub">Accès privé — entre le mot de passe</div>
-    <input type="password" class="pw-input" id="pw-input" placeholder="••••••••" maxlength="20"
-      onkeydown="if(event.key==='Enter')checkPW()"
-      oninput="document.getElementById('pw-err').textContent='';this.classList.remove('error')">
-    <button class="pw-btn" onclick="checkPW()">Entrer ♠</button>
-    <div class="pw-error" id="pw-err"></div>
-    <div class="pw-hint">Session privée · Données locales uniquement</div>
-  </div>
-</div>
+
 <button class="ham" id="ham" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 <div class="app">
 
@@ -484,7 +438,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
   <nav class="nav">
     <div class="nav-group">
       <div class="nav-group-label">Session</div>
-      <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</div>
       <div class="nav-item" onclick="nav('hands',this)"><span class="nav-icon">🃏</span>Saisir main</div>
       <div class="nav-item" onclick="nav('history',this)"><span class="nav-icon">📜</span>Historique</div>
     </div>
@@ -496,7 +450,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
     </div>
     <div class="nav-group">
       <div class="nav-group-label">IA Coach</div>
-      <div class="nav-item live-btn" onclick="nav('solver',this)"><span class="nav-icon">🔴</span>Solver Live</div>
+      <div class="nav-item live-btn active" onclick="nav('solver',this)"><span class="nav-icon">🔴</span>Solver Live</div>
       <div class="nav-item" onclick="nav('coach',this)"><span class="nav-icon">🤖</span>Coach IA</div>
     </div>
     <div class="nav-group">
@@ -517,7 +471,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
 <main class="main">
 
 <!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
+<div class="page" id="page-dashboard">
   <div class="ph">
     <div><div class="ph-title">Dashboard</div><div class="ph-sub">Session en cours</div></div>
     <div class="btn-row"><button class="btn" onclick="exportCSV()">⬇ CSV</button><button class="btn btn-danger" onclick="resetSession()">↺ Reset</button></div>
@@ -621,10 +575,17 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
 <!-- ═══════════════════════════════════
      SOLVER LIVE
 ═══════════════════════════════════ -->
-<div class="page" id="page-solver">
+<div class="page active" id="page-solver">
   <div class="ph">
-    <div><div class="ph-title">🔴 Solver Live</div><div class="ph-sub">Table interactive — cartes, joueurs, IA Gemini</div></div>
-    <button class="btn" onclick="resetSolver()">↺ Nouvelle main</button>
+    <div><div class="ph-title">🔴 Solver Live</div><div class="ph-sub">Table interactive — cartes, joueurs, IA</div></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:5px 10px">
+        <span style="font-size:11px;color:var(--text3)">🔑</span>
+        <input type="password" id="solver-api-key" placeholder="Clé Gemini AIza..." style="background:none;border:none;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:160px" oninput="saveSolverKey()" value="">
+        <span id="solver-api-badge" style="display:none;font-size:10px;padding:1px 6px;border-radius:20px"></span>
+      </div>
+      <button class="btn" onclick="resetSolver()">↺ Nouvelle main</button>
+    </div>
   </div>
 
   <!-- Player count + effacer inline -->
@@ -727,7 +688,7 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
           </div>
         </div>
         <button class="btn btn-green btn-wide" id="analyze-btn" onclick="analyzeLive()" style="margin-top:4px">
-          ✦ Analyser avec Gemini IA
+          ✦ Analyser avec l'IA
         </button>
       </div>
     </div>
@@ -881,8 +842,16 @@ tbody tr:hover td{background:rgba(255,255,255,.015)}
 
 </main></div>
 <div class="toast" id="toast"></div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
+/* Chart.js lazy loader */
+let chartJsLoaded=false;
+function loadChartJs(cb){
+  if(chartJsLoaded){cb();return}
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js';
+  s.onload=()=>{chartJsLoaded=true;cb()};
+  document.head.appendChild(s);
+}
 /* ════════════════════════════════════
    STATE
 ════════════════════════════════════ */
@@ -900,7 +869,7 @@ function nav(page,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(el)el.classList.add('active');
-  const acts={dashboard:renderDashboard,history:renderHistory,odds:calcOdds,equity:calcEquity,ranges:()=>renderRanges('open'),solver:initSolver};
+  const acts={dashboard:()=>{if(!chartInst)renderDashboard();else renderDashboard()},history:renderHistory,odds:calcOdds,equity:calcEquity,ranges:()=>renderRanges('open'),solver:initSolver};
   if(acts[page])acts[page]();
   if(window.innerWidth<=768)document.getElementById('sidebar').classList.remove('open');
 }
@@ -948,12 +917,14 @@ function updateSidebar(){
   document.getElementById('sb-hands').textContent=s.n+' main'+(s.n>1?'s':'');
 }
 function renderChart(){
+  loadChartJs(()=>{
   const ctx=document.getElementById('profitChart').getContext('2d');
   let cum=0;const data=[0],labels=['0'];
   hands.forEach((h,i)=>{cum+=h.pl;data.push(+cum.toFixed(2));labels.push('#'+(i+1))});
   const last=data[data.length-1],clr=last>=0?'#16c76a':'#f0365a',fill=last>=0?'rgba(22,199,106,0.07)':'rgba(240,54,90,0.07)';
   if(chartInst)chartInst.destroy();
-  chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:clr,borderWidth:2,fill:true,backgroundColor:fill,tension:.35,pointRadius:data.length>20?0:3,pointBackgroundColor:clr}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161c24',borderColor:'rgba(255,255,255,.08)',borderWidth:1,titleColor:'#4a5568',bodyColor:'#dde3f0',callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toFixed(1)+' BB'}}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#4a5568',font:{size:10,family:'JetBrains Mono'},callback:v=>(v>0?'+':'')+v},border:{color:'rgba(255,255,255,.06)'}}}}});
+  chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:clr,borderWidth:2,fill:true,backgroundColor:fill,tension:.35,pointRadius:data.length>20?0:3,pointBackgroundColor:clr}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#161c24',borderColor:'rgba(255,255,255,.08)',borderWidth:1,titleColor:'#4a5568',bodyColor:'#dde3f0',callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toFixed(1)+' BB'}}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#4a5568',font:{size:10,family:'monospace'},callback:v=>(v>0?'+':'')+v},border:{color:'rgba(255,255,255,.06)'}}}}}); 
+  });
 }
 function renderRecentHands(){
   const el=document.getElementById('recent-list'),r=hands.slice(-5).reverse();
@@ -1726,64 +1697,66 @@ function resetDecision(){
 function cardStr(c){return c.rank+c.suit}
 
 async function analyzeLive(){
-  if(!gemKey){toast('Entre ta clé Gemini dans Coach IA');return}
+  if(!gemKey){toast('Entre ta clé Gemini en haut de la page');return}
   const me=sv.players[0];
   if(me.cards.length<2){toast('Sélectionne tes 2 cartes (clique sur toi à la table)');return}
-  // Auto-detect street
   const nc=sv.community.length;
   const street=nc===0?'preflop':nc<=3?'flop':nc===4?'turn':'river';
   sv.street=street;
 
   const btn=document.getElementById('analyze-btn');
-  btn.disabled=true;btn.innerHTML='<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Analyse...';
+  btn.disabled=true;btn.innerHTML='<span style="display:inline-block;animation:spin 1s linear infinite">⟳</span> Analyse IA...';
   const db=document.getElementById('decision-box');
   db.className='decision dec-neutral dec-loading';
-  db.innerHTML='<div class="typing" style="justify-content:center"><span></span><span></span><span></span></div><div style="color:var(--text3);font-size:12px;margin-top:8px">Gemini analyse...</div>';
+  db.innerHTML='<div class="typing" style="justify-content:center"><span></span><span></span><span></span></div><div style="color:var(--text3);font-size:12px;margin-top:8px">IA en cours...</div>';
 
   const hole=me.cards.map(cardStr).join(' ');
   const board=sv.community.map(cardStr).join(' ')||'aucune';
   const pos=get('s-pos'),pot=get('s-pot'),bet=get('s-bet'),stack=get('s-stack'),ostack=get('s-ostack'),opp=get('s-opp');
-  const oppMap={unknown:'inconnu',tight:'tight/nitty',fish:'fish loose passif',lag:'LAG agressif',reg:'regular TAG',maniac:'maniac'};
+  const spr=(parseFloat(stack)/(parseFloat(pot)||1)).toFixed(1);
+  const potOdds=parseFloat(bet)>0?Math.round(parseFloat(bet)/(parseFloat(pot)+parseFloat(bet))*100):0;
+
+  // Build detailed opponent info
   const oppsInfo=sv.players.slice(1).map((p,i)=>{
-    const cards=p.mode==='known'&&p.cards.length===2?p.cards.map(cardStr).join(' '):'inconnues';
-    return`Joueur ${i+2}: ${cards}, profil: ${PROF_LABELS[p.profile]||'?'}, stack: ${p.stack} BB`;
-  }).join('\n');
-  const prompt=`Tu es un solver poker expert GTO/exploitative. Réponds UNIQUEMENT en JSON valide sans texte avant/après:
-{
-  "action": "FOLD"|"CALL"|"CHECK"|"RAISE"|"ALL-IN",
-  "confidence": 0-100,
-  "strength": 0-100,
-  "strength_label": "nom de la main",
-  "sizing": "ex: Raise 3/4 pot = 7.5 BB" ou null,
-  "why": "Explication 2 phrases max",
-  "full_analysis": "Analyse 4-6 phrases: force main, board, odds, adversaires, plan",
-  "board_textures": ["tags parmi: rainbow,monotone,bicolore,paired,sec,coordonné,mouillé,favorable,dangereux,flush possible,straight possible"] ou [],
-  "key_insight": "Point clé en 1 phrase"
-}
+    const cards=p.mode==='known'&&p.cards.length===2?p.cards.map(cardStr).join(' '):'??';
+    const prof={unknown:'inconnu',tight:'tight/nitty (range étroite, forte)',fish:'fish (call trop, range large faible)',lag:'LAG (agressif loose)',reg:'regular TAG (solide)',maniac:'maniac (bluff fréquent)'}[p.profile]||p.profile;
+    return`J${i+2}: ${cards} · profil:${prof} · stack:${p.stack}BB${p.pos?' · pos:'+p.pos:''}`;
+  }).join(' | ');
+
+  const prompt=`Expert GTO/exploitative poker solver. Analyse cette situation et réponds UNIQUEMENT en JSON valide (pas de texte avant/après, pas de markdown):
+{"action":"FOLD"|"CALL"|"CHECK"|"RAISE"|"ALL-IN","confidence":0-100,"strength":0-100,"strength_label":"nom main","sizing":"ex: Raise 3x pot = 9BB" ou null,"why":"2 phrases max directes","full_analysis":"4-6 phrases: (1)force main vs board (2)odds/equity (3)profil adverse+exploitation (4)plan multi-street (5)sizing optimal","board_textures":["rainbow"|"monotone"|"bicolore"|"paired"|"sec"|"coordonné"|"mouillé"|"favorable"|"dangereux"|"flush possible"|"straight possible"],"key_insight":"le point décisif en 1 phrase courte"}
+
 SITUATION:
-Street: ${street}
-Mes cartes: ${hole}
-Board: ${board}
-Ma position: ${pos}
-Pot: ${pot} BB | Mise à caller: ${bet} BB | Mon stack: ${stack} BB
-Adversaire principal: stack ${ostack} BB, profil ${oppMap[opp]||opp}
-${oppsInfo?'Autres joueurs:\n'+oppsInfo:''}
-SPR: ${(parseFloat(stack)/(parseFloat(pot)||1)).toFixed(1)}`;
+Street:${street} | Cartes:${hole} | Board:${board||'–'}
+Position:${pos} | Pot:${pot}BB | À caller:${bet}BB | Stack:${stack}BB | SPR:${spr}
+${potOdds?'Pot odds nécessaires: '+potOdds+'%':''} 
+Adversaire principal: stack${ostack}BB profil:${opp}
+${oppsInfo?'Adversaires: '+oppsInfo:''}
+
+Priorité: action +EV maximale. Si SPR<3, considère push/fold. Si fish, value bet plus large. Si tight, bluff moins.`;
+
   try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gemKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:900}})});
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${gemKey}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contents:[{role:'user',parts:[{text:prompt}]}],
+        generationConfig:{temperature:0.1,maxOutputTokens:700,responseMimeType:'application/json'}
+      })
+    });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
     let raw=data.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
     raw=raw.replace(/```json|```/g,'').trim();
     const m=raw.match(/\{[\s\S]*\}/);
-    if(!m)throw new Error('JSON invalide');
+    if(!m)throw new Error('Réponse invalide');
     const r=JSON.parse(m[0]);
     sv.lastResult={r,hole,board,pos,pot,bet,stack};
     renderDecision(r,pot,bet,stack);
   }catch(e){
     db.className='decision dec-neutral';
-    db.innerHTML=`<div style="color:var(--red);font-size:12.5px">❌ ${e.message}</div>`;
-  }finally{btn.disabled=false;btn.innerHTML='✦ Analyser avec Gemini IA'}
+    db.innerHTML=`<div style="color:var(--red);font-size:12.5px">❌ ${e.message}</div><div style="font-size:11px;color:var(--text3);margin-top:6px">Vérifie ta clé Gemini (doit commencer par AIza...)</div>`;
+  }finally{btn.disabled=false;btn.innerHTML='✦ Analyser avec l\'IA'}
 }
 
 function renderDecision(r,pot,bet,stack){
@@ -1829,6 +1802,8 @@ function saveKey(){
   if(k.startsWith('AIza')&&k.length>20){b.style.display='inline';b.className='api-ok';b.textContent='✓ OK'}
   else if(k){b.style.display='inline';b.className='api-no';b.textContent='⚠ Invalide'}
   else{b.style.display='none'}
+  // Sync solver key input
+  const sk=document.getElementById('solver-api-key');if(sk&&sk.value!==k){sk.value=k;saveSolverKey()}
 }
 function getSysPrompt(){
   const s=getStats(),name=settings.name||'le joueur';
@@ -1842,7 +1817,7 @@ async function sendAI(){
   document.getElementById('ai-send').disabled=true;
   try{
     const msgs=[{role:'user',parts:[{text:getSysPrompt()+'\n\nPremière question: '+chatHist[0].parts[0].text}]},...chatHist.slice(1)];
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${gemKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:msgs})});
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${gemKey}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:msgs,generationConfig:{temperature:0.3,maxOutputTokens:800}})});
     const data=await res.json();rmTyping();
     if(data.error)throw new Error(data.error.message);
     const reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'Pas de réponse.';
@@ -1887,48 +1862,31 @@ function toast(msg,cls){clearTimeout(toastT);const el=document.getElementById('t
    INIT
 ════════════════════════════════════ */
 function init(){
-  if(gemKey){const el=document.getElementById('api-key');if(el){el.value=gemKey;saveKey()}}
+  if(gemKey){
+    const el=document.getElementById('api-key');if(el){el.value=gemKey;saveKey()}
+    const sk=document.getElementById('solver-api-key');if(sk){sk.value=gemKey;saveSolverKey()}
+  }
   set2('set-bb',settings.bb);set2('set-stack',settings.stack);set2('set-name',settings.name);
-  updateSidebar();renderDashboard();calcOdds();calcEquity();renderRanges('open');
-  // Init solver state
+  updateSidebar();calcOdds();calcEquity();renderRanges('open');
+  // Init solver state — solver is the default page
   initPlayers(sv.playerCount);
+  initSolver();
 }
 /* ════════════════════════════════════
-   PASSWORD GATE
+   PASSWORD GATE — REMOVED
 ════════════════════════════════════ */
-const PW_KEY='wp_auth';
-const PW_HASH='3c8d4e9a1f2b567890abcdef'; // obfuscated marker
-
-function checkPW(){
-  const val=document.getElementById('pw-input').value;
-  if(val==='123POKER'){
-    sessionStorage.setItem(PW_KEY,'ok');
-    const gate=document.getElementById('pw-gate');
-    gate.style.transition='opacity .4s';
-    gate.style.opacity='0';
-    setTimeout(()=>gate.remove(),420);
-    document.getElementById('pw-input').classList.remove('error');
-  } else {
-    const inp=document.getElementById('pw-input');
-    const err=document.getElementById('pw-err');
-    inp.classList.add('error');
-    err.textContent='Mot de passe incorrect';
-    inp.value='';
-    setTimeout(()=>inp.classList.remove('error'),500);
-  }
-}
-
-function initGate(){
-  if(sessionStorage.getItem(PW_KEY)==='ok'){
-    document.getElementById('pw-gate').remove();
-  } else {
-    // Keep gate visible, focus input
-    setTimeout(()=>document.getElementById('pw-input').focus(),100);
-  }
+function saveSolverKey(){
+  const k=document.getElementById('solver-api-key').value.trim();
+  gemKey=k;localStorage.setItem('wp_key',k);
+  const b=document.getElementById('solver-api-badge');
+  if(k.startsWith('AIza')&&k.length>20){b.style.display='inline';b.style.background='var(--green2)';b.style.color='var(--green)';b.textContent='✓ OK'}
+  else if(k){b.style.display='inline';b.style.background='var(--red2)';b.style.color='var(--red)';b.textContent='⚠'}
+  else{b.style.display='none'}
+  // Also sync to coach page
+  const el=document.getElementById('api-key');if(el)el.value=k;
 }
 
 init();
-initGate();
 
 // Close player panel when clicking outside it
 document.addEventListener('click', function(e){
